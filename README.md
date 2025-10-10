@@ -110,6 +110,8 @@ The setup script automatically handles port conflicts:
 - ✅ **Alternative ports**: Finds next available ports automatically
 - ✅ **Clear feedback**: Shows which ports are being used
 - ✅ **No manual configuration**: Everything is handled automatically
+- ✅ **Cross-platform**: Works on macOS, Linux, and Windows
+- ✅ **Smart detection**: Uses `lsof`, `netstat`, or `ip` commands as available
 
 ## 🛠️ Development Setup (Without Docker)
 

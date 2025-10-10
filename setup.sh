@@ -9,20 +9,30 @@ echo "🚀 Data Storage App - Quick Setup"
 echo "=================================="
 
 # Check if Docker is installed
-if ! command -v docker &> /dev/null; then
+if ! command -v docker >/dev/null 2>&1; then
     echo "❌ Docker is not installed. Please install Docker first:"
     echo "   https://docs.docker.com/get-docker/"
     exit 1
 fi
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
+# Check for Docker Compose (both old and new syntax)
+if command -v docker-compose >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
     echo "❌ Docker Compose is not installed. Please install Docker Compose first:"
     echo "   https://docs.docker.com/compose/install/"
     exit 1
 fi
 
-echo "✅ Docker and Docker Compose are installed"
+# Check if openssl is available
+if ! command -v openssl >/dev/null 2>&1; then
+    echo "❌ OpenSSL is not installed. Please install OpenSSL first."
+    exit 1
+fi
+
+echo "✅ All prerequisites are installed"
 
 # Cleanup function
 cleanup() {
@@ -35,8 +45,14 @@ trap cleanup EXIT
 check_port() {
     local port=$1
     
-    # Try different methods based on OS
-    if command -v lsof >/dev/null 2>&1; then
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+        # Windows
+        if netstat -an | findstr ":$port " >/dev/null 2>&1; then
+            return 1  # Port is in use
+        else
+            return 0  # Port is available
+        fi
+    elif command -v lsof >/dev/null 2>&1; then
         # macOS/Linux with lsof
         if lsof -i :$port >/dev/null 2>&1; then
             return 1  # Port is in use
@@ -51,9 +67,21 @@ check_port() {
             return 0  # Port is available
         fi
     else
-        # If neither lsof nor netstat is available, assume port is available
         echo "⚠️  Warning: Cannot check port availability (lsof/netstat not found)"
         return 0
+    fi
+}
+
+# Better IP detection
+get_local_ip() {
+    if command -v ip >/dev/null 2>&1; then
+        # Linux with ip command
+        ip route get 1.1.1.1 | grep -oP 'src \K\S+' 2>/dev/null || echo ""
+    elif command -v ifconfig >/dev/null 2>&1; then
+        # macOS/Linux with ifconfig
+        ifconfig | grep -E 'inet [0-9]' | grep -v '127.0.0.1' | awk '{print $2}' | head -1
+    else
+        echo ""
     fi
 }
 
@@ -178,16 +206,16 @@ EOF
 echo "🐳 Starting the application..."
 echo "   This may take a few minutes on first run..."
 
-docker-compose up --build -d
+$DOCKER_COMPOSE up --build -d
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to start..."
-sleep 10
+sleep 15
 
 # Check if services are running
-if docker-compose ps | grep -q "Up"; then
+if $DOCKER_COMPOSE ps | grep -q "Up"; then
     # Get local IP address
-    LOCAL_IP=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -1)
+    LOCAL_IP=$(get_local_ip)
     
     echo ""
     echo "🎉 Setup Complete!"
@@ -214,10 +242,10 @@ if docker-compose ps | grep -q "Up"; then
     echo "  3. Start creating data entries!"
     echo ""
     echo "Useful commands:"
-    echo "  📊 View logs:    docker-compose logs -f"
-    echo "  🛑 Stop app:     docker-compose down"
-    echo "  🔄 Restart:      docker-compose restart"
-    echo "  🧹 Clean up:     docker-compose down -v"
+    echo "  📊 View logs:    $DOCKER_COMPOSE logs -f"
+    echo "  🛑 Stop app:     $DOCKER_COMPOSE down"
+    echo "  🔄 Restart:      $DOCKER_COMPOSE restart"
+    echo "  🧹 Clean up:     $DOCKER_COMPOSE down -v"
     echo ""
     echo "🔒 Security Note:"
     echo "  The app is now accessible from your local network."
@@ -232,11 +260,12 @@ if docker-compose ps | grep -q "Up"; then
     echo ""
 else
     echo "❌ Failed to start services. Check the logs:"
-    echo "   docker-compose logs"
+    echo "   $DOCKER_COMPOSE logs"
     echo ""
     echo "💡 Troubleshooting tips:"
     echo "   - Make sure no other applications are using the required ports"
-    echo "   - Try running: docker-compose down -v && docker-compose up --build"
+    echo "   - Try running: $DOCKER_COMPOSE down -v && $DOCKER_COMPOSE up --build"
     echo "   - Check if Docker has enough resources allocated"
+    echo "   - Ensure Docker Desktop is running (if on macOS/Windows)"
     exit 1
 fi

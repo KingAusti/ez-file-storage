@@ -13,7 +13,16 @@ check_port() {
     local port=$1
     local service=$2
     
-    if command -v lsof >/dev/null 2>&1; then
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+        # Windows
+        if netstat -an | findstr ":$port " >/dev/null 2>&1; then
+            echo "❌ Port $port ($service) is IN USE"
+            return 1
+        else
+            echo "✅ Port $port ($service) is available"
+            return 0
+        fi
+    elif command -v lsof >/dev/null 2>&1; then
         if lsof -i :$port >/dev/null 2>&1; then
             echo "❌ Port $port ($service) is IN USE"
             return 1
@@ -60,10 +69,18 @@ BACKEND_PORT=8000
 POSTGRES_PORT=5432
 REDIS_PORT=6379
 
-FRONTEND_AVAILABLE=$(check_port $FRONTEND_PORT "Frontend")
-BACKEND_AVAILABLE=$(check_port $BACKEND_PORT "Backend")
-POSTGRES_AVAILABLE=$(check_port $POSTGRES_PORT "PostgreSQL")
-REDIS_AVAILABLE=$(check_port $REDIS_PORT "Redis")
+# Check ports and capture both output and return code
+check_port $FRONTEND_PORT "Frontend"
+FRONTEND_AVAILABLE=$?
+
+check_port $BACKEND_PORT "Backend"
+BACKEND_AVAILABLE=$?
+
+check_port $POSTGRES_PORT "PostgreSQL"
+POSTGRES_AVAILABLE=$?
+
+check_port $REDIS_PORT "Redis"
+REDIS_AVAILABLE=$?
 
 echo ""
 echo "📋 Port Status Summary:"
