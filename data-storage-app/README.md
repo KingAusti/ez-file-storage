@@ -1,21 +1,16 @@
 # Data Storage Application
 
-A secure, production-ready web application for storing and managing personal data with enterprise-grade features including authentication, audit logging, dark mode, tagging system, and advanced search capabilities.
-
-**Version**: 1.1.0 | **API Version**: v1
+A secure, production-ready web application for storing and managing personal data with enterprise-grade features including authentication, audit logging, and dark mode.
 
 ## ✨ Features
 
 - **🔐 Secure Authentication**: JWT with refresh tokens, password reset, rate limiting
 - **📝 Data Management**: Create, read, update, and delete data entries
-- **🏷️ Tags System**: Organize entries with color-coded tags and filtering
-- **🔍 Advanced Search**: Full-text search across titles and content with date filtering
 - **🌙 Dark Mode**: Beautiful light/dark theme with smooth transitions
 - **📊 Audit Logging**: Complete tracking of all user actions
 - **🚀 Production Ready**: PostgreSQL, Redis, monitoring, automated backups
 - **🐳 Docker Ready**: One-command setup with Docker Compose
 - **📱 Responsive**: Works great on desktop and mobile devices
-- **📋 Versioning**: Comprehensive version tracking and changelog
 
 ## 🚀 Quick Start (30 seconds)
 
@@ -24,8 +19,8 @@ A secure, production-ready web application for storing and managing personal dat
 ### Option 1: Automated Setup (Recommended)
 ```bash
 # 1. Clone the repository
-git clone https://github.com/KingAusti/ez-file-storage.git
-cd ez-file-storage
+git clone <repository-url>
+cd data-storage-app
 
 # 2. Run the setup script (that's it!)
 ./setup.sh
@@ -34,8 +29,8 @@ cd ez-file-storage
 ### Option 2: Manual Setup
 ```bash
 # 1. Clone the repository
-git clone https://github.com/KingAusti/ez-file-storage.git
-cd ez-file-storage
+git clone <repository-url>
+cd data-storage-app
 
 # 2. Start the application
 docker-compose up --build
@@ -286,22 +281,13 @@ docker-compose up --build
 - `GET /auth/me` - Get current user info
 
 ### Data Entries
-- `GET /data-entries/` - Get data entries with search, filtering, and pagination
-- `POST /data-entries/` - Create new data entry with tags
+- `GET /data-entries/` - Get all user's data entries
+- `POST /data-entries/` - Create new data entry
 - `GET /data-entries/{id}` - Get specific data entry
 - `PUT /data-entries/{id}` - Update data entry
 - `DELETE /data-entries/{id}` - Delete data entry
 
-### Tags
-- `GET /tags/` - Get all tags with usage counts
-- `POST /tags/` - Create new tag
-- `GET /tags/{id}` - Get specific tag
-- `PUT /tags/{id}` - Update tag
-- `DELETE /tags/{id}` - Delete tag
-
 ### System
-- `GET /` - API status and version
-- `GET /version` - Detailed version information
 - `GET /health` - Health check with dependency validation
 - `GET /metrics` - Prometheus metrics
 

@@ -16,3 +16,6 @@ class DataEntry(Base):
     # Foreign key to user
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     owner = relationship("User", back_populates="data_entries")
+    
+    # Many-to-many relationship with tags
+    tags = relationship("Tag", secondary="data_entry_tags", back_populates="data_entries")

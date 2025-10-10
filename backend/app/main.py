@@ -14,8 +14,9 @@ import uuid
 from .core.database import engine
 from .core.config import settings
 from .core.logging import configure_logging, get_logger
+from .core.version import get_version_info, get_health_version, VERSION
 from .models import user, data_entry, audit_log
-from .routers import auth_router, data_entries_router
+from .routers import auth_router, data_entries_router, tags_router
 
 # Configure logging
 logger = configure_logging()
@@ -44,7 +45,7 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title="Data Storage API",
     description="A secure data storage application with authentication",
-    version="1.0.0",
+    version=VERSION,
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
 )
@@ -121,11 +122,18 @@ async def add_request_id_and_logging(request: Request, call_next):
 # Include routers
 app.include_router(auth_router)
 app.include_router(data_entries_router)
+app.include_router(tags_router)
 
 
 @app.get("/")
 def read_root():
-    return {"message": "Data Storage API is running", "version": "1.0.0"}
+    return {"message": "Data Storage API is running", "version": VERSION}
+
+
+@app.get("/version")
+def get_version():
+    """Get detailed version information"""
+    return get_version_info()
 
 
 @app.get("/health")
@@ -134,7 +142,7 @@ def health_check():
     health_status = {
         "status": "healthy",
         "timestamp": time.time(),
-        "version": "1.0.0",
+        **get_health_version(),
         "environment": settings.environment,
     }
     
