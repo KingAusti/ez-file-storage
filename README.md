@@ -19,8 +19,8 @@ A secure, production-ready web application for storing and managing personal dat
 ### Option 1: Automated Setup (Recommended)
 ```bash
 # 1. Clone the repository
-git clone <repository-url>
-cd data-storage-app
+git clone https://github.com/KingAusti/ez-file-storage.git
+cd ez-file-storage
 
 # 2. Run the setup script (that's it!)
 ./setup.sh
@@ -29,8 +29,8 @@ cd data-storage-app
 ### Option 2: Manual Setup
 ```bash
 # 1. Clone the repository
-git clone <repository-url>
-cd data-storage-app
+git clone https://github.com/KingAusti/ez-file-storage.git
+cd ez-file-storage
 
 # 2. Start the application
 docker-compose up --build
