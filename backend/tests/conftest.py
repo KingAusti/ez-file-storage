@@ -8,6 +8,8 @@ from app.main import app
 from app.core.database import get_db, Base
 from app.core.security import get_password_hash
 from app.models.user import User
+# Import all models to ensure they're registered with Base
+from app.models import user, data_entry, audit_log, tag
 
 # Create test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"

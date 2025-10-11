@@ -192,17 +192,17 @@ def get_data_entry(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    data_entry = db.query(DataEntry).filter(
+    data_entry = db.query(DataEntry).options(joinedload(DataEntry.tags)).filter(
         DataEntry.id == data_entry_id,
         DataEntry.owner_id == current_user.id
     ).first()
-    
+
     if not data_entry:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Data entry not found"
         )
-    
+
     # Log data entry access
     AuditService.log_data_entry_action(
         db=db,
@@ -212,8 +212,17 @@ def get_data_entry(
         ip_address=get_remote_address(request),
         user_agent=request.headers.get("user-agent")
     )
-    
-    return data_entry
+
+    # Convert to response format
+    return {
+        "id": data_entry.id,
+        "title": data_entry.title,
+        "content": data_entry.content,
+        "created_at": data_entry.created_at,
+        "updated_at": data_entry.updated_at,
+        "owner_id": data_entry.owner_id,
+        "tags": [{"id": tag.id, "name": tag.name, "color": tag.color} for tag in data_entry.tags]
+    }
 
 
 @router.put("/{data_entry_id}", response_model=DataEntryResponse)
@@ -239,14 +248,29 @@ def update_data_entry(
     # Store old values for audit log
     old_title = data_entry.title
     old_content = data_entry.content
+    old_tag_ids = [tag.id for tag in data_entry.tags]
     
     if data_entry_update.title is not None:
         data_entry.title = data_entry_update.title
     if data_entry_update.content is not None:
         data_entry.content = data_entry_update.content
     
+    # Update tags if provided
+    if data_entry_update.tag_ids is not None:
+        # Clear existing tags
+        data_entry.tags.clear()
+        # Add new tags
+        if data_entry_update.tag_ids:
+            tags = db.query(Tag).filter(Tag.id.in_(data_entry_update.tag_ids)).all()
+            data_entry.tags.extend(tags)
+    
     db.commit()
     db.refresh(data_entry)
+    
+    # Load tags for response
+    data_entry = db.query(DataEntry).options(joinedload(DataEntry.tags)).filter(
+        DataEntry.id == data_entry_id
+    ).first()
     
     # Log data entry update
     AuditService.log_data_entry_action(
@@ -258,15 +282,26 @@ def update_data_entry(
             "old_title": old_title,
             "new_title": data_entry.title,
             "content_changed": old_content != data_entry.content,
-            "content_length": len(data_entry.content)
+            "content_length": len(data_entry.content),
+            "old_tag_ids": old_tag_ids,
+            "new_tag_ids": [tag.id for tag in data_entry.tags]
         },
         ip_address=get_remote_address(request),
         user_agent=request.headers.get("user-agent")
     )
     
     logger.info("Data entry updated", user_id=current_user.id, entry_id=data_entry_id)
-    
-    return data_entry
+
+    # Convert to response format
+    return {
+        "id": data_entry.id,
+        "title": data_entry.title,
+        "content": data_entry.content,
+        "created_at": data_entry.created_at,
+        "updated_at": data_entry.updated_at,
+        "owner_id": data_entry.owner_id,
+        "tags": [{"id": tag.id, "name": tag.name, "color": tag.color} for tag in data_entry.tags]
+    }
 
 
 @router.delete("/{data_entry_id}")
