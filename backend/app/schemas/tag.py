@@ -8,7 +8,7 @@ from datetime import datetime
 
 class TagBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50, description="Tag name")
-    color: str = Field(default="#007bff", regex="^#[0-9A-Fa-f]{6}$", description="Hex color code")
+    color: str = Field(default="#007bff", pattern="^#[0-9A-Fa-f]{6}$", description="Hex color code")
     description: Optional[str] = Field(None, max_length=200, description="Tag description")
 
 
@@ -18,7 +18,7 @@ class TagCreate(TagBase):
 
 class TagUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=50)
-    color: Optional[str] = Field(None, regex="^#[0-9A-Fa-f]{6}$")
+    color: Optional[str] = Field(None, pattern="^#[0-9A-Fa-f]{6}$")
     description: Optional[str] = Field(None, max_length=200)
 
 
