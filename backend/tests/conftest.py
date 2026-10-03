@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import Base, get_db
 from app.core.security import get_password_hash
 from app.main import app
+from app.routers import auth, data_entries, tags
 
 # Import all models to ensure they're registered with Base
 from app.models import audit_log, data_entry, tag, user
@@ -56,6 +57,9 @@ def db_session(setup_database):
 def client(db_session):
     """Create test client with database override"""
     app.dependency_overrides[get_db] = lambda: db_session
+    # Rate-limit counters are process-wide; reset them so each test starts clean.
+    for router_limiter in (auth.limiter, data_entries.limiter, tags.limiter):
+        router_limiter.reset()
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
