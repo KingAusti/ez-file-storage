@@ -7,11 +7,11 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import Base, get_db
 from app.core.security import get_password_hash
 from app.main import app
-from app.routers import auth, data_entries, tags
 
 # Import all models to ensure they're registered with Base
 from app.models import audit_log, data_entry, tag, user
 from app.models.user import User
+from app.routers import auth, data_entries, tags
 
 # Create test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
