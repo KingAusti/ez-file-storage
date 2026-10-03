@@ -1,15 +1,21 @@
 """
 Pydantic schemas for Tag model
 """
-from typing import List, Optional
-from pydantic import BaseModel, Field
+
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class TagBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50, description="Tag name")
-    color: str = Field(default="#007bff", pattern="^#[0-9A-Fa-f]{6}$", description="Hex color code")
-    description: Optional[str] = Field(None, max_length=200, description="Tag description")
+    color: str = Field(
+        default="#007bff", pattern="^#[0-9A-Fa-f]{6}$", description="Hex color code"
+    )
+    description: Optional[str] = Field(
+        None, max_length=200, description="Tag description"
+    )
 
 
 class TagCreate(TagBase):
@@ -37,6 +43,7 @@ class TagWithCount(TagResponse):
 
 class DataEntryWithTags(BaseModel):
     """Schema for data entry with tags"""
+
     id: int
     title: str
     content: str

@@ -1,9 +1,10 @@
 """
 Version management for the Data Storage Application
 """
+
 import os
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Application version
 VERSION = "1.1.0"
@@ -33,6 +34,7 @@ FEATURES = {
 # API version
 API_VERSION = "v1"
 
+
 def get_version_info() -> Dict[str, Any]:
     """Get comprehensive version information"""
     return {
@@ -44,6 +46,7 @@ def get_version_info() -> Dict[str, Any]:
         "features": FEATURES,
         "environment": os.environ.get("ENVIRONMENT", "development"),
     }
+
 
 def get_health_version() -> Dict[str, str]:
     """Get minimal version info for health checks"""

@@ -64,15 +64,11 @@ find_available_port() {
 echo "Checking default ports..."
 echo ""
 
-FRONTEND_PORT=3000
 BACKEND_PORT=8000
 POSTGRES_PORT=5432
 REDIS_PORT=6379
 
 # Check ports and capture both output and return code
-check_port $FRONTEND_PORT "Frontend"
-FRONTEND_AVAILABLE=$?
-
 check_port $BACKEND_PORT "Backend"
 BACKEND_AVAILABLE=$?
 
@@ -86,7 +82,7 @@ echo ""
 echo "📋 Port Status Summary:"
 echo "======================="
 
-if [ $FRONTEND_AVAILABLE -eq 0 ] && [ $BACKEND_AVAILABLE -eq 0 ] && [ $POSTGRES_AVAILABLE -eq 0 ] && [ $REDIS_AVAILABLE -eq 0 ]; then
+if [ $BACKEND_AVAILABLE -eq 0 ] && [ $POSTGRES_AVAILABLE -eq 0 ] && [ $REDIS_AVAILABLE -eq 0 ]; then
     echo "🎉 All ports are available! You can run the setup script normally."
     echo ""
     echo "Run: ./setup.sh"
@@ -94,11 +90,6 @@ else
     echo "⚠️  Some ports are in use. The setup script will automatically find alternatives."
     echo ""
     echo "Alternative ports that will be used:"
-    
-    if [ $FRONTEND_AVAILABLE -ne 0 ]; then
-        ALT_PORT=$(find_available_port $FRONTEND_PORT)
-        echo "  Frontend:  $ALT_PORT (instead of $FRONTEND_PORT)"
-    fi
     
     if [ $BACKEND_AVAILABLE -ne 0 ]; then
         ALT_PORT=$(find_available_port $BACKEND_PORT)

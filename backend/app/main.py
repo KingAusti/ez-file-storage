@@ -1,21 +1,22 @@
-from fastapi import FastAPI, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 import time
 import uuid
 
-from .core.database import engine
+import sentry_sdk
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+
 from .core.config import settings
+from .core.database import engine
 from .core.logging import configure_logging, get_logger
-from .core.version import get_version_info, get_health_version, VERSION
-from .models import user, data_entry, audit_log
+from .core.version import VERSION, get_health_version, get_version_info
+from .models import audit_log, data_entry, user
 from .routers import auth_router, data_entries_router, tags_router
 
 # Configure logging
@@ -73,10 +74,10 @@ async def add_request_id_and_logging(request: Request, call_next):
     """Add request ID and structured logging"""
     request_id = str(uuid.uuid4())
     start_time = time.time()
-    
+
     # Add request ID to request state
     request.state.request_id = request_id
-    
+
     # Log request
     logger.info(
         "Request started",
@@ -86,13 +87,13 @@ async def add_request_id_and_logging(request: Request, call_next):
         client_ip=get_remote_address(request),
         user_agent=request.headers.get("user-agent"),
     )
-    
+
     try:
         response = await call_next(request)
-        
+
         # Calculate processing time
         process_time = time.time() - start_time
-        
+
         # Log response
         logger.info(
             "Request completed",
@@ -100,22 +101,22 @@ async def add_request_id_and_logging(request: Request, call_next):
             status_code=response.status_code,
             process_time=process_time,
         )
-        
+
         # Add request ID to response headers
         response.headers["X-Request-ID"] = request_id
-        
+
         return response
-        
+
     except Exception as e:
         process_time = time.time() - start_time
-        
+
         logger.error(
             "Request failed",
             request_id=request_id,
             error=str(e),
             process_time=process_time,
         )
-        
+
         raise
 
 
@@ -145,10 +146,11 @@ def health_check():
         **get_health_version(),
         "environment": settings.environment,
     }
-    
+
     # Check database connection
     try:
         from .core.database import SessionLocal
+
         db = SessionLocal()
         db.execute("SELECT 1")
         db.close()
@@ -157,17 +159,18 @@ def health_check():
         health_status["database"] = "unhealthy"
         health_status["database_error"] = str(e)
         health_status["status"] = "unhealthy"
-    
+
     # Check Redis connection (if configured)
     try:
         import redis
+
         r = redis.from_url(settings.redis_url)
         r.ping()
         health_status["redis"] = "healthy"
     except Exception as e:
         health_status["redis"] = "unhealthy"
         health_status["redis_error"] = str(e)
-    
+
     return health_status
 
 

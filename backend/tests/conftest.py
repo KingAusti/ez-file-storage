@@ -4,12 +4,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.main import app
-from app.core.database import get_db, Base
+from app.core.database import Base, get_db
 from app.core.security import get_password_hash
-from app.models.user import User
+from app.main import app
+
 # Import all models to ensure they're registered with Base
-from app.models import user, data_entry, audit_log, tag
+from app.models import audit_log, data_entry, tag, user
+from app.models.user import User
+from app.routers import auth, data_entries, tags
 
 # Create test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -43,9 +45,9 @@ def db_session(setup_database):
     connection = engine.connect()
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
-    
+
     yield session
-    
+
     session.close()
     transaction.rollback()
     connection.close()
@@ -55,6 +57,9 @@ def db_session(setup_database):
 def client(db_session):
     """Create test client with database override"""
     app.dependency_overrides[get_db] = lambda: db_session
+    # Rate-limit counters are process-wide; reset them so each test starts clean.
+    for router_limiter in (auth.limiter, data_entries.limiter, tags.limiter):
+        router_limiter.reset()
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
@@ -68,7 +73,7 @@ def test_user(db_session):
         email="test@example.com",
         hashed_password=get_password_hash("testpassword123"),
         is_active=True,
-        is_verified=True
+        is_verified=True,
     )
     db_session.add(user)
     db_session.commit()
@@ -80,8 +85,7 @@ def test_user(db_session):
 def auth_headers(client, test_user):
     """Get authentication headers for test user"""
     response = client.post(
-        "/auth/login",
-        data={"username": "testuser", "password": "testpassword123"}
+        "/auth/login", data={"username": "testuser", "password": "testpassword123"}
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

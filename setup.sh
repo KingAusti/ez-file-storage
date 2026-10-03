@@ -104,18 +104,11 @@ find_available_port() {
 # Check for port conflicts and find alternatives
 echo "🔍 Checking for port conflicts..."
 
-FRONTEND_PORT=3000
 BACKEND_PORT=8000
 POSTGRES_PORT=5432
 REDIS_PORT=6379
 
 # Check and find alternative ports if needed
-if ! check_port $FRONTEND_PORT; then
-    echo "⚠️  Port $FRONTEND_PORT is in use, finding alternative..."
-    FRONTEND_PORT=$(find_available_port $FRONTEND_PORT)
-    echo "✅ Using port $FRONTEND_PORT for frontend"
-fi
-
 if ! check_port $BACKEND_PORT; then
     echo "⚠️  Port $BACKEND_PORT is in use, finding alternative..."
     BACKEND_PORT=$(find_available_port $BACKEND_PORT)
@@ -135,7 +128,6 @@ if ! check_port $REDIS_PORT; then
 fi
 
 echo "📋 Port configuration:"
-echo "   Frontend:  $FRONTEND_PORT"
 echo "   Backend:   $BACKEND_PORT"
 echo "   PostgreSQL: $POSTGRES_PORT"
 echo "   Redis:     $REDIS_PORT"
@@ -168,9 +160,6 @@ SENTRY_DSN=
 # Environment
 ENVIRONMENT=development
 DEBUG=true
-
-# Frontend
-REACT_APP_API_URL=http://localhost:$BACKEND_PORT
 EOF
     echo "✅ Environment configuration created"
 else
@@ -183,12 +172,6 @@ cat > docker-compose.override.yml << EOF
 version: '3.8'
 
 services:
-  frontend:
-    ports:
-      - "0.0.0.0:$FRONTEND_PORT:3000"
-    environment:
-      - REACT_APP_API_URL=http://0.0.0.0:$BACKEND_PORT
-
   backend:
     ports:
       - "0.0.0.0:$BACKEND_PORT:8000"
@@ -224,21 +207,19 @@ if $DOCKER_COMPOSE ps | grep -q "Up"; then
     echo "Your application is now running and accessible:"
     echo ""
     echo "📍 Local Access:"
-    echo "  🌐 Frontend:    http://localhost:$FRONTEND_PORT"
     echo "  🔧 Backend API: http://localhost:$BACKEND_PORT"
     echo "  📚 API Docs:    http://localhost:$BACKEND_PORT/docs"
     echo "  ❤️  Health:      http://localhost:$BACKEND_PORT/health"
     echo ""
     if [ ! -z "$LOCAL_IP" ]; then
         echo "🌍 Network Access (same WiFi):"
-        echo "  🌐 Frontend:    http://$LOCAL_IP:$FRONTEND_PORT"
         echo "  🔧 Backend API: http://$LOCAL_IP:$BACKEND_PORT"
         echo "  📚 API Docs:    http://$LOCAL_IP:$BACKEND_PORT/docs"
         echo ""
     fi
     echo "Next steps:"
-    echo "  1. Open http://localhost:$FRONTEND_PORT in your browser"
-    echo "  2. Register a new account"
+    echo "  1. Open http://localhost:$BACKEND_PORT/docs to explore the API"
+    echo "  2. Register a new account via the API"
     echo "  3. Start creating data entries!"
     echo ""
     echo "Useful commands:"
@@ -253,7 +234,6 @@ if $DOCKER_COMPOSE ps | grep -q "Up"; then
     echo "  or deploying to a cloud server for better security."
     echo ""
     echo "📝 Port Information:"
-    echo "  Frontend:  $FRONTEND_PORT (was 3000)"
     echo "  Backend:   $BACKEND_PORT (was 8000)"
     echo "  PostgreSQL: $POSTGRES_PORT (was 5432)"
     echo "  Redis:     $REDIS_PORT (was 6379)"
