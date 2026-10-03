@@ -1,18 +1,16 @@
+import structlog
 from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
 from .config import settings
-import structlog
 
 logger = structlog.get_logger()
 
 # Sync engine for migrations and initial setup
 engine = create_engine(
-    settings.database_url,
-    pool_pre_ping=True,
-    pool_recycle=300,
-    echo=settings.debug
+    settings.database_url, pool_pre_ping=True, pool_recycle=300, echo=settings.debug
 )
 
 # Async engine for application use
@@ -20,14 +18,12 @@ async_engine = create_async_engine(
     settings.database_url_async,
     pool_pre_ping=True,
     pool_recycle=300,
-    echo=settings.debug
+    echo=settings.debug,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 AsyncSessionLocal = async_sessionmaker(
-    async_engine, 
-    class_=AsyncSession, 
-    expire_on_commit=False
+    async_engine, class_=AsyncSession, expire_on_commit=False
 )
 
 Base = declarative_base()

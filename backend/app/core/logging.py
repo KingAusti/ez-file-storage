@@ -1,13 +1,15 @@
-import structlog
 import logging
 import sys
 from typing import Any, Dict
+
+import structlog
+
 from .config import settings
 
 
 def configure_logging():
     """Configure structured logging for the application"""
-    
+
     # Configure structlog
     structlog.configure(
         processors=[
@@ -19,7 +21,7 @@ def configure_logging():
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer()
+            structlog.processors.JSONRenderer(),
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
