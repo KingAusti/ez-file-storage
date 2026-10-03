@@ -5,6 +5,23 @@ All notable changes to the Data Storage Application will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-10-03
+
+### Added
+- MIT `LICENSE` (Copyright (c) 2025 Austin Henry)
+- Dependabot configuration for `/backend` (uv) and GitHub Actions, weekly, minor and patch updates grouped
+
+### Changed
+- Repository is now API-only: the orphaned `frontend` gitlink was removed (no frontend source exists)
+- `POST /auth/login` returns `refresh_token` alongside `access_token`
+- CI fixed; the `backend-tests`, `security-scan` and `docker-build` jobs pass
+- README rewritten for the API service
+- Env examples consolidated: `backend/.env.example` lists exactly the keys read by `app/core/config.py`, root `.env.example` lists the keys read by `docker-compose.yml`
+
+### Removed
+- `backend/env.example` (duplicate of `backend/.env.example` with a different key set)
+- `IMPROVEMENTS_SUMMARY.md` and `data-storage-app/README.md` (stale; still available in git history)
+
 ## [1.1.0] - 2024-01-01
 
 ### Added
