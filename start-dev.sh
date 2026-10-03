@@ -11,12 +11,6 @@ if ! command -v uv &> /dev/null; then
     exit 1
 fi
 
-# Check if npm is installed
-if ! command -v npm &> /dev/null; then
-    echo "❌ npm is not installed. Please install Node.js first."
-    exit 1
-fi
-
 # Start backend
 echo "🔧 Starting backend server..."
 cd backend
@@ -38,40 +32,19 @@ BACKEND_PID=$!
 # Wait a moment for backend to start
 sleep 3
 
-# Start frontend
-echo "🎨 Starting frontend server..."
-cd ../frontend
-
-# Install frontend dependencies
-echo "📦 Installing frontend dependencies..."
-npm install
-
-# Create .env if it doesn't exist
-if [ ! -f .env ]; then
-    echo "📝 Creating .env file from .env.example..."
-    cp .env.example .env
-fi
-
-# Start frontend
-echo "🌐 Starting React development server on http://localhost:3000..."
-npm start &
-FRONTEND_PID=$!
-
 echo ""
 echo "✅ Application started successfully!"
 echo "   Backend:  http://localhost:8000"
-echo "   Frontend: http://localhost:3000"
 echo "   API Docs: http://localhost:8000/docs"
 echo ""
-echo "Press Ctrl+C to stop both servers"
+echo "Press Ctrl+C to stop the server"
 
 # Function to cleanup on exit
 cleanup() {
     echo ""
-    echo "🛑 Stopping servers..."
+    echo "🛑 Stopping server..."
     kill $BACKEND_PID 2>/dev/null
-    kill $FRONTEND_PID 2>/dev/null
-    echo "✅ Servers stopped"
+    echo "✅ Server stopped"
     exit 0
 }
 

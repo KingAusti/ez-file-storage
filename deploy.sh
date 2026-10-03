@@ -68,12 +68,6 @@ setup_environment() {
         print_warning "Created backend/.env file from backend/.env.example"
     fi
     
-    # Copy frontend .env.example to .env if it doesn't exist
-    if [ ! -f frontend/.env ]; then
-        cp frontend/.env.example frontend/.env
-        print_warning "Created frontend/.env file from frontend/.env.example"
-    fi
-    
     print_success "Environment files are ready"
 }
 
@@ -101,7 +95,6 @@ show_status() {
     
     echo ""
     print_status "Application URLs:"
-    echo "  Frontend: http://localhost:3000"
     echo "  Backend:  http://localhost:8000"
     echo "  API Docs: http://localhost:8000/docs"
     

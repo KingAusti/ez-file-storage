@@ -56,12 +56,6 @@ echo "Test 5: Testing port checking functions..."
 source ./setup.sh 2>/dev/null || true
 
 # Test port checking
-if check_port 3000; then
-    echo "✅ Port 3000 is available"
-else
-    echo "❌ Port 3000 is in use"
-fi
-
 if check_port 8000; then
     echo "✅ Port 8000 is available"
 else
