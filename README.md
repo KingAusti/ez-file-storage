@@ -1,345 +1,160 @@
-# Data Storage Application
+# ez-file-storage
 
-A secure, production-ready web application for storing and managing personal data with enterprise-grade features including authentication, audit logging, dark mode, tagging system, and advanced search capabilities.
+[![CI](https://github.com/KingAusti/ez-file-storage/actions/workflows/ci.yml/badge.svg)](https://github.com/KingAusti/ez-file-storage/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Version**: 1.1.0 | **API Version**: v1
+A self-hosted API service for storing personal text entries. Users register,
+log in with a JWT, and create, search, tag and delete their own entries over
+HTTP. There is no frontend in this repository; the OpenAPI docs at `/docs` are
+the interface.
 
-## ✨ Features
+Stack: FastAPI, SQLAlchemy, Alembic, PostgreSQL (SQLite for local use), Redis, slowapi, structlog, nginx.
 
-- **🔐 Secure Authentication**: JWT with refresh tokens, password reset, rate limiting
-- **📝 Data Management**: Create, read, update, and delete data entries
-- **🏷️ Tags System**: Organize entries with color-coded tags and filtering
-- **🔍 Advanced Search**: Full-text search across titles and content with date filtering
-- **🌙 Dark Mode**: Beautiful light/dark theme with smooth transitions
-- **📊 Audit Logging**: Complete tracking of all user actions
-- **🚀 Production Ready**: PostgreSQL, Redis, monitoring, automated backups
-- **🐳 Docker Ready**: One-command setup with Docker Compose
-- **📱 Responsive**: Works great on desktop and mobile devices
-- **📋 Versioning**: Comprehensive version tracking and changelog
+## Requirements
 
-## 🚀 Quick Start (30 seconds)
+- Python 3.11 or newer and [uv](https://docs.astral.sh/uv/) for local runs
+- Docker with Compose for the containerised setup
+- `pg_dump`, `psql` and `gzip` for the backup scripts
 
-**Prerequisites**: Docker and Docker Compose
+## Quick start
 
-### Option 1: Automated Setup (Recommended)
-```bash
-# 1. Clone the repository
-git clone https://github.com/KingAusti/ez-file-storage.git
-cd ez-file-storage
-
-# 2. Run the setup script (that's it!)
-./setup.sh
-```
-
-### Option 2: Manual Setup
-```bash
-# 1. Clone the repository
-git clone https://github.com/KingAusti/ez-file-storage.git
-cd ez-file-storage
-
-# 2. Start the application
-docker-compose up --build
-
-# 3. Open your browser
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
-```
-
-**That's it!** The application will automatically:
-- Set up PostgreSQL database with secure passwords
-- Configure Redis for caching
-- Start the backend API server
-- Launch the React frontend
-- Run database migrations
-- Generate secure environment variables
-- **Make the app accessible from your local network** (same WiFi)
-- **Handle port conflicts automatically** (finds alternative ports if needed)
-
-## 🎯 What You Get
-
-Once running, you can:
-1. **Register** a new account at http://localhost:3000/register
-2. **Login** and start creating data entries
-3. **Toggle dark mode** using the 🌙/☀️ button in the navbar
-4. **View API documentation** at http://localhost:8000/docs
-5. **Monitor health** at http://localhost:8000/health
-6. **Access from other devices** on your WiFi network using your computer's IP address
-
-## 🌍 Network Access
-
-The application is configured to be accessible from:
-- **Local machine**: http://localhost:3000
-- **Same WiFi network**: http://YOUR_IP:3000 (setup script will show your IP)
-- **Other devices**: Phones, tablets, other computers on your network
-
-**Note**: For internet access, see the [Production Deployment](#-production-deployment) section.
-
-### Finding Your IP Address
-
-The setup script will automatically show your IP address, but you can also find it manually:
-
-**macOS/Linux:**
-```bash
-ifconfig | grep "inet " | grep -v 127.0.0.1
-```
-
-**Windows:**
-```bash
-ipconfig | findstr "IPv4"
-```
-
-### Testing External Access
-
-1. **Start the application**: `./setup.sh` or `docker-compose up --build`
-2. **Note your IP address and ports** from the setup output
-3. **Test from another device** on the same WiFi:
-   - Open browser on phone/tablet/other computer
-   - Navigate to `http://YOUR_IP:FRONTEND_PORT` (setup script will show the actual port)
-   - You should see the login page
-
-### Port Conflict Handling
-
-The setup script automatically handles port conflicts:
+From a clone of the repository, run the API locally against SQLite:
 
 ```bash
-# Check for port conflicts before setup
-./scripts/check-ports.sh
-
-# Or just run setup (it handles conflicts automatically)
-./setup.sh
-```
-
-**What happens if ports are in use:**
-- ✅ **Automatic detection**: Script checks if default ports (3000, 8000, 5432, 6379) are available
-- ✅ **Alternative ports**: Finds next available ports automatically
-- ✅ **Clear feedback**: Shows which ports are being used
-- ✅ **No manual configuration**: Everything is handled automatically
-- ✅ **Cross-platform**: Works on macOS, Linux, and Windows
-- ✅ **Smart detection**: Uses `lsof`, `netstat`, or `ip` commands as available
-
-## 🛠️ Development Setup (Without Docker)
-
-If you prefer to run without Docker, you'll need PostgreSQL and Redis running locally:
-
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 15+
-- Redis 7+
-- uv (Python package manager)
-
-### Quick Setup
-```bash
-# Backend
 cd backend
-cp env.example .env  # Edit with your database credentials
+cp .env.example .env
 uv sync
-uv run python main.py
-
-# Frontend (in another terminal)
-cd frontend
-npm install
-npm start
+uv run uvicorn app.main:app --port 8000
 ```
 
-## 🐳 Docker Commands
+Open http://localhost:8000/docs. `ENVIRONMENT=development` (the default in
+`.env.example`) creates the tables on startup. Redis is not needed locally; it
+is only used by the `/health` check, which reports it as unhealthy when absent.
 
-```bash
-# Start the application
-docker-compose up --build
+`start-dev.sh` does the same thing in one step (`uv run python main.py`, with
+reload).
 
-# Start in background
-docker-compose up --build -d
+## Features
 
-# View logs
-docker-compose logs -f
+Endpoints, from `backend/app/main.py` and `backend/app/routers/`:
 
-# Stop the application
-docker-compose down
+| Area | Endpoints |
+| --- | --- |
+| Auth | `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password`; `GET /auth/me` |
+| Data entries | `GET /data-entries/` (search, tag and date filters, sorting, limit/offset), `POST /data-entries/`, `GET`, `PUT`, `DELETE /data-entries/{id}` |
+| Tags | `GET /tags/` (with usage counts), `POST /tags/`, `GET`, `PUT`, `DELETE /tags/{id}` |
+| Service | `GET /`, `/version`, `/health`, `/metrics` |
 
-# Clean up everything (removes data!)
-docker-compose down -v --remove-orphans
-```
+- Login returns an access token and a refresh token (HS256 JWTs, 30 minute and
+  7 day lifetimes by default). Refresh tokens are stored hashed and revoked on
+  logout. Entries and tags routes require a bearer token, and entries are
+  scoped to their owner.
+- An account is locked for 15 minutes after 5 failed logins.
+- Per-IP rate limits with slowapi, set per route (for example login 5/minute,
+  entry reads 100/hour, entry writes 50/hour).
+- Security-relevant actions (login, failed login, entry and tag changes) are
+  written to an `audit_logs` table.
+- Structured logs with structlog; optional Sentry reporting when `SENTRY_DSN`
+  is set.
+- `/metrics` is a placeholder that returns zeros, and `/auth/forgot-password`
+  does not send email: no mail-sending code exists yet.
 
-## 📚 API Documentation
+## Configuration
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **Health Check**: http://localhost:8000/health
+Local runs read `backend/.env` (template: `backend/.env.example`). Every key is
+a field of `Settings` in `backend/app/core/config.py`; unset keys use the
+defaults there.
 
-## 🌐 Production Deployment
+| Key | Purpose |
+| --- | --- |
+| `SECRET_KEY` | JWT signing key. Set your own. |
+| `ALGORITHM` | JWT algorithm, default `HS256` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime, default 30 |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime, default 7 |
+| `DATABASE_URL` | SQLAlchemy URL for the app |
+| `DATABASE_URL_ASYNC` | Async URL (`postgresql+asyncpg://`) |
+| `REDIS_URL` | Redis URL, used by `/health` |
+| `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_SERVER`, `MAIL_PORT`, `MAIL_TLS`, `MAIL_SSL` | Declared, not used by any code yet |
+| `SENTRY_DSN` | Enables Sentry when set |
+| `RATE_LIMIT_PER_MINUTE`, `RATE_LIMIT_LOGIN_ATTEMPTS` | Declared, not used; route limits are hard-coded |
+| `ENVIRONMENT` | `development` creates tables on startup; any other value does not |
+| `DEBUG` | `true` serves `/docs` and `/redoc`, allows any CORS origin, and echoes SQL |
 
-### Simple Production Setup
+With `DEBUG=false` there are no docs routes and no CORS origins are allowed.
 
-1. **Set environment variables**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with production values (SECRET_KEY, database passwords, etc.)
-   ```
+Docker Compose reads the root `.env` (template: `.env.example`): `SECRET_KEY`,
+`POSTGRES_PASSWORD`, `ENVIRONMENT`, `SENTRY_DSN` and the `MAIL_*` keys. Compose
+sets `DATABASE_URL`, `DATABASE_URL_ASYNC` and `REDIS_URL` itself.
 
-2. **Start with Nginx**:
-   ```bash
-   docker-compose --profile production up --build -d
-   ```
+## Development
 
-3. **Setup automated backups**:
-   ```bash
-   # Add to crontab for daily backups
-   crontab -e
-   # Add: 0 2 * * * /path/to/scripts/backup.sh
-   ```
-
-### Production Security Checklist
-
-- [ ] Change `SECRET_KEY` in `.env`
-- [ ] Use strong database passwords
-- [ ] Enable HTTPS (place SSL certs in `nginx/ssl/`)
-- [ ] Configure firewall (ports 80, 443, 22)
-- [ ] Setup monitoring (Sentry DSN in `.env`)
-- [ ] Configure email settings for password reset
-
-## 🛠️ Development
-
-### Backend Development
 ```bash
 cd backend
-uv sync --dev    # Install dev dependencies
-uv run black .   # Format code
-uv run pytest    # Run tests
+uv sync --extra dev
+SECRET_KEY=test ENVIRONMENT=testing uv run pytest
+uv run black --check . && uv run isort --check-only . && uv run flake8 .
 ```
 
-### Frontend Development
+Tests run on SQLite and need no Docker. Migrations live in `backend/alembic/versions/`
+and use the `sqlalchemy.url` set in `backend/alembic.ini`, not `DATABASE_URL`:
+
 ```bash
-cd frontend
-npm install      # Install dependencies
-npm start        # Start dev server
-npm test         # Run tests
+cd backend
+uv run alembic upgrade head
+uv run alembic revision --autogenerate -m "describe the change"
 ```
 
-## 🔧 Troubleshooting
+`docker-compose.dev.yml` mounts `backend/` into the container and runs uvicorn
+with `--reload`:
 
-### Common Issues
-
-**Port already in use**:
 ```bash
-# Check what's using the port
-lsof -i :8000
-lsof -i :3000
-
-# The setup script handles this automatically, but if you need to manually check:
-./scripts/check-ports.sh
-
-# Or find what's using a specific port:
-lsof -i :PORT_NUMBER
-netstat -an | grep :PORT_NUMBER
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-**Docker permission errors**:
+CI (`.github/workflows/ci.yml`) runs backend tests, a security scan and a
+Docker build on pushes and pull requests to `main` and `develop`.
+
+## Deployment
+
+`docker-compose.yml` defines `postgres`, `redis` and `backend`, plus `nginx`
+behind the `production` profile. The backend publishes port 8000, PostgreSQL
+5432 and Redis 6379 on all interfaces, so put a firewall in front or change the
+port mappings.
+
 ```bash
-# On Linux, add user to docker group
-sudo usermod -aG docker $USER
-# Log out and back in
+cp .env.example .env        # set SECRET_KEY and POSTGRES_PASSWORD
+docker compose up --build -d
+docker compose --profile production up --build -d   # adds nginx
 ```
 
-**Application won't start**:
+`./deploy.sh start`, `stop`, `restart`, `status`, `logs [service]` and
+`cleanup` wrap the same commands. The script calls the `docker-compose`
+binary, so it needs Compose v1 or a compatibility shim. `./setup.sh` generates
+a root `.env` with random secrets and then runs `docker compose up`.
+
+`nginx/nginx.conf` listens on port 80, rate limits `/api/` (10 requests/second)
+and `/auth/` (5 requests/minute), and proxies everything to the backend. The
+HTTPS server block is commented out; certificates would go in `nginx/ssl/`.
+
+Compose does not run Alembic. With `ENVIRONMENT=production` the app does not
+create tables, so run `alembic upgrade head` against the database first.
+
+## Backups
+
+`scripts/backup.sh [name]` writes a gzipped plain-SQL `pg_dump` to
+`./backups/` (`BACKUP_DIR`), deletes backups older than 30 days
+(`RETENTION_DAYS`) and optionally uploads to S3 when `S3_BUCKET` is set.
+Connection settings come from `DB_HOST`, `DB_PORT`, `DB_NAME` and `DB_USER`
+(defaults: localhost, 5432, data_storage, postgres).
+
 ```bash
-# Check logs
-docker-compose logs
-
-# Clean restart
-docker-compose down -v
-docker-compose up --build
+./scripts/backup.sh
+./scripts/restore.sh backups/backup_YYYYMMDD_HHMMSS.sql.gz
 ```
 
-**Database connection issues**:
-- Ensure PostgreSQL and Redis are running
-- Check environment variables in `.env`
-- Verify database credentials
+`scripts/restore.sh` loads the dump into a temporary database, asks for
+confirmation twice, then drops and recreates the live database.
 
-### Reset Everything
-```bash
-docker-compose down -v --remove-orphans
-docker system prune -f
-docker-compose up --build
-```
+## License
 
-## 🏗️ Architecture
-
-- **Frontend**: React + TypeScript + Bootstrap
-- **Backend**: FastAPI + Python 3.11
-- **Database**: PostgreSQL 15 with connection pooling
-- **Cache**: Redis 7
-- **Authentication**: JWT with refresh tokens
-- **Security**: Rate limiting, audit logging, password strength validation
-- **Monitoring**: Structured logging, health checks, Sentry integration
-
-## 📋 API Endpoints
-
-### Authentication
-- `POST /auth/register` - Register new user
-- `POST /auth/login` - Login user  
-- `POST /auth/refresh` - Refresh access token
-- `POST /auth/logout` - Logout user
-- `POST /auth/forgot-password` - Request password reset
-- `POST /auth/reset-password` - Reset password
-- `GET /auth/me` - Get current user info
-
-### Data Entries
-- `GET /data-entries/` - Get data entries with search, filtering, and pagination
-- `POST /data-entries/` - Create new data entry with tags
-- `GET /data-entries/{id}` - Get specific data entry
-- `PUT /data-entries/{id}` - Update data entry
-- `DELETE /data-entries/{id}` - Delete data entry
-
-### Tags
-- `GET /tags/` - Get all tags with usage counts
-- `POST /tags/` - Create new tag
-- `GET /tags/{id}` - Get specific tag
-- `PUT /tags/{id}` - Update tag
-- `DELETE /tags/{id}` - Delete tag
-
-### System
-- `GET /` - API status and version
-- `GET /version` - Detailed version information
-- `GET /health` - Health check with dependency validation
-- `GET /metrics` - Prometheus metrics
-
-## 🔒 Security Features
-
-- **Authentication**: JWT with refresh tokens (7-day expiry)
-- **Rate Limiting**: 5 login attempts/minute, 100 API calls/hour
-- **Password Security**: bcrypt hashing + strength validation
-- **Account Protection**: Lockout after failed attempts
-- **Audit Logging**: Complete action tracking
-- **Input Validation**: Pydantic schemas + sanitization
-- **CORS Protection**: Configurable origins
-- **SQL Injection Protection**: SQLAlchemy ORM
-
-## 📊 Production Features
-
-- **Database**: PostgreSQL with migrations and backups
-- **Caching**: Redis for sessions and query results
-- **Monitoring**: Structured logging + Sentry error tracking
-- **Health Checks**: Dependency validation + metrics
-- **Backups**: Automated daily backups with S3 integration
-- **CI/CD**: GitHub Actions with testing and security scanning
-- **Containerization**: Multi-service Docker setup
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Run tests: `docker-compose exec backend uv run pytest`
-5. Commit changes: `git commit -m 'Add amazing feature'`
-6. Push to branch: `git push origin feature/amazing-feature`
-7. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Need help?** Check the [troubleshooting section](#-troubleshooting) or open an issue on GitHub.
+MIT. See [LICENSE](LICENSE).
